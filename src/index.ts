@@ -3,29 +3,55 @@ import {
   differenceInCalendarDays,
   startOfDay,
   format,
-  addSeconds
+  addSeconds,
+  subHours,
+  differenceInDays,
+  getMinutes,
+  getHours,
+  addMinutes
 } from 'date-fns';
 
-const { PI, cos, sin, asin, acos, tan, pow } = Math;
+const { PI, cos, sin, asin, acos, tan, pow, round } = Math;
 
 // Julian days is number of days since Monday, January 1, 4713 BC.
-// Source: https://en.wikipedia.org/wiki/Julian_day.
-const JULIAN_DAYS_ON_20000501_1200 = 2451545;
-// Standard epoch of J2000.0. When we hit year 2100, the Epoch will change.
+const JULIAN_DAYS_ON_19000501_1200_APPROX = 2415018.5;
+const JULIAN_DAYS_ON_19000501_1200 = 2451545;
+// Standard epoch of J1900.0. When we hit year 2100, the Epoch will change.
 // As written in the source, "Please note that calculations in the spreadsheets are only
 // valid for dates between 1901 and 2099, due to an approximation used in the Julian Day calculation".
 const ONE_JULIAN_CENTURY = 36525;
-const LEAP_SECOND_AND_TERRESTIAL_TIME = 0.0008;
 
-const toRadian = (degree: number) => (degree * PI) / 180;
-const toDegree = (radian: number) => (radian * 180) / PI;
+const radians = (degree: number) => (degree * PI) / 180;
+const degrees = (radian: number) => (radian * 180) / PI;
 
-export function calculate(date: Date, latitude: number, longitude: number) {
+// Baseline numbers.
+function getDayFraction(date: Date) {
+  return (getMinutes(date) / 60 + getHours(date)) / 24;
+}
+
+function getDecimalNumbers(value: number, defaultNumberOfDecimals = 4) {
+  return Number(value.toFixed(defaultNumberOfDecimals));
+}
+
+function getJulianDate(date: Date, tzOffset = date.getTimezoneOffset()) {
+  // Source: https://www.aavso.org/computing-jd.
+  const utc = addMinutes(date, tzOffset);
+  const gmat = subHours(utc, 12);
+
+  const decimal = getDayFraction(gmat);
+
   const jd =
-    differenceInCalendarDays(new Date(), new Date(2000, 0, 1, 12)) +
-    JULIAN_DAYS_ON_20000501_1200 +
-    LEAP_SECOND_AND_TERRESTIAL_TIME;
-  const jc = (jd - JULIAN_DAYS_ON_20000501_1200) / ONE_JULIAN_CENTURY;
+    differenceInCalendarDays(date, new Date(1900, 0, 1, 12)) +
+    JULIAN_DAYS_ON_19000501_1200_APPROX +
+    // Include the end date.
+    1;
+
+  return jd + decimal;
+}
+
+function getBaselineNumbers(date: Date) {
+  const jd = getJulianDate(date);
+  const jc = (jd - JULIAN_DAYS_ON_19000501_1200) / ONE_JULIAN_CENTURY;
 
   // Mean longitude of the sun in degrees.
   const gmLongSun = (280.46646 + (jc * 36000.76983 + jc * 0.0003032)) % 360;
@@ -38,47 +64,55 @@ export function calculate(date: Date, latitude: number, longitude: number) {
     23 +
     (26 + (21.448 - jc * (46.815 + jc * (0.00059 - jc * 0.001813))) / 60) / 60;
   const obliqCorr =
-    meanObliqEcliptic + 0.00256 * cos(toRadian(125.04 - 1934.136 * jc));
-  const vary = pow(tan(toRadian(obliqCorr / 2)), 2);
+    meanObliqEcliptic + 0.00256 * cos(radians(125.04 - 1934.136 * jc));
+  const vary = pow(tan(radians(obliqCorr / 2)), 2);
 
-  // Sun calculations.
+  // Sun equation of thecenter.
   const sunEqCtr =
-    sin(toRadian(gmAnomSun)) * (1.914602 - jc * (0.004817 + 0.000014 * jc)) +
-    sin(toRadian(2 * gmAnomSun)) * (0.019993 - 0.000101 * jc) +
-    sin(toRadian(3 * gmAnomSun)) * 0.000289;
+    sin(radians(gmAnomSun)) * (1.914602 - jc * (0.004817 + 0.000014 * jc)) +
+    sin(radians(2 * gmAnomSun)) * (0.019993 - 0.000101 * jc) +
+    sin(radians(3 * gmAnomSun)) * 0.000289;
   const sunTrueLongitude = gmLongSun + sunEqCtr;
   // Sun apprearance longitude (degrees).
   const sunAppearLong =
-    sunTrueLongitude -
-    0.00569 -
-    0.00478 * sin(toRadian(125.04 - 1934.136 * jc));
-  // Sun declination.
-  const sunDecl = toDegree(
-    asin(sin(toRadian(obliqCorr)) * sin(toRadian(sunAppearLong)))
-  );
+    sunTrueLongitude - 0.00569 - 0.00478 * sin(radians(125.04 - 1934.136 * jc));
 
+  // Sun declination.
+  const sunDecl = degrees(
+    asin(sin(radians(obliqCorr)) * sin(radians(sunAppearLong)))
+  );
   // Equation of time.
   const eq =
     4 *
-    toDegree(
-      vary * sin(2 * toRadian(gmLongSun)) -
-        2 * eccentOrbitEarth * sin(toRadian(gmAnomSun)) +
+    degrees(
+      vary * sin(2 * radians(gmLongSun)) -
+        2 * eccentOrbitEarth * sin(radians(gmAnomSun)) +
         4 *
           eccentOrbitEarth *
           vary *
-          sin(toRadian(gmAnomSun)) *
-          cos(2 * toRadian(gmLongSun)) -
-        0.5 * vary * vary * sin(4 * toRadian(gmLongSun)) -
-        1.25 *
-          eccentOrbitEarth *
-          eccentOrbitEarth *
-          sin(2 * toRadian(gmAnomSun))
+          sin(radians(gmAnomSun)) *
+          cos(2 * radians(gmLongSun)) -
+        0.5 * vary * vary * sin(4 * radians(gmLongSun)) -
+        1.25 * eccentOrbitEarth * eccentOrbitEarth * sin(2 * radians(gmAnomSun))
     );
-  const haSunrise = toDegree(
+
+  return {
+    eq,
+    sunDecl
+  };
+}
+
+// Baseline numbers for sunrise and sunset.
+function getBaselineNumbersForSunriseAndSunset(
+  date: Date,
+  latitude: number,
+  longitude: number
+) {
+  const { eq, sunDecl } = getBaselineNumbers(date);
+  const haSunrise = degrees(
     acos(
-      cos(toRadian(90.833)) /
-        (cos(toRadian(latitude)) * cos(toRadian(sunDecl))) -
-        tan(toRadian(latitude)) * tan(toRadian(sunDecl))
+      cos(radians(90.833)) / (cos(radians(latitude)) * cos(radians(sunDecl))) -
+        tan(radians(latitude)) * tan(radians(sunDecl))
     )
   );
 
@@ -86,16 +120,126 @@ export function calculate(date: Date, latitude: number, longitude: number) {
   const solarNoon =
     (720 - 4 * longitude - eq + date.getTimezoneOffset() * -1) / 1440;
 
-  // Make them all seconds within a day.
-  const solarNoonSeconds = solarNoon * 86400;
-  const sunriseSeconds = solarNoonSeconds - ((haSunrise * 4) / 1440) * 86400;
-  const sunsetSeconds = solarNoonSeconds + ((haSunrise * 4) / 1440) * 86400;
-
-  const start = startOfDay(date);
-
   return {
-    sunrise: format(addSeconds(start, sunriseSeconds), 'HH:mm:ss'),
-    lst: format(addSeconds(start, solarNoon * 86400), 'HH:mm:ss'),
-    sunset: format(addSeconds(start, sunsetSeconds), 'HH:mm:ss')
+    haSunrise,
+    solarNoon
   };
 }
+
+// Functions that return in seconds.
+export function getSolarNoonLSTInSeconds(
+  date: Date,
+  latitude: number,
+  longitude: number
+) {
+  const { solarNoon } = getBaselineNumbersForSunriseAndSunset(
+    date,
+    latitude,
+    longitude
+  );
+
+  return solarNoon * 86400;
+}
+
+export function getSunriseInSeconds(
+  date: Date,
+  latitude: number,
+  longitude: number
+) {
+  const { haSunrise, solarNoon } = getBaselineNumbersForSunriseAndSunset(
+    date,
+    latitude,
+    longitude
+  );
+  const solarNoonInSeconds = solarNoon * 86400;
+
+  return solarNoonInSeconds - ((haSunrise * 4) / 1440) * 86400;
+}
+
+export function getSunsetInSeconds(
+  date: Date,
+  latitude: number,
+  longitude: number
+) {
+  const { haSunrise, solarNoon } = getBaselineNumbersForSunriseAndSunset(
+    date,
+    latitude,
+    longitude
+  );
+  const solarNoonInSeconds = solarNoon * 86400;
+
+  return solarNoonInSeconds + ((haSunrise * 4) / 1440) * 86400;
+}
+
+// Functions that return the fraction.
+export function getSolarNoonLSTInFractions(
+  date: Date,
+  latitude: number,
+  longitude: number
+) {
+  return getSolarNoonLSTInSeconds(date, latitude, longitude) / 86400;
+}
+
+export function getSunriseInFractions(
+  date: Date,
+  latitude: number,
+  longitude: number
+) {
+  return getSunriseInSeconds(date, latitude, longitude) / 86400;
+}
+
+export function getSunsetInFractions(
+  date: Date,
+  latitude: number,
+  longitude: number
+) {
+  return getSunsetInSeconds(date, latitude, longitude) / 86400;
+}
+
+// Functions to get the exact date.
+export function getSolarNoonLST(
+  date: Date,
+  latitude: number,
+  longitude: number
+) {
+  const { solarNoon } = getBaselineNumbersForSunriseAndSunset(
+    date,
+    latitude,
+    longitude
+  );
+
+  const solarNoonInSeconds = solarNoon * 86400;
+  const start = startOfDay(date);
+
+  return addSeconds(start, solarNoonInSeconds);
+}
+
+export function getSunrise(date: Date, latitude: number, longitude: number) {
+  const { haSunrise, solarNoon } = getBaselineNumbersForSunriseAndSunset(
+    date,
+    latitude,
+    longitude
+  );
+
+  const solarNoonInSeconds = solarNoon * 86400;
+  const sunriseSeconds = solarNoonInSeconds - ((haSunrise * 4) / 1440) * 86400;
+  const start = startOfDay(date);
+
+  return addSeconds(start, sunriseSeconds);
+}
+
+export function getSunset(date: Date, latitude: number, longitude: number) {
+  const { haSunrise, solarNoon } = getBaselineNumbersForSunriseAndSunset(
+    date,
+    latitude,
+    longitude
+  );
+
+  const solarNoonInSeconds = solarNoon * 86400;
+  const sunriseSeconds = solarNoonInSeconds + ((haSunrise * 4) / 1440) * 86400;
+  const start = startOfDay(date);
+
+  return addSeconds(start, sunriseSeconds);
+}
+
+// TODO: get solar elevation.

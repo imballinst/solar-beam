@@ -1,12 +1,12 @@
 // Source: https://www.esrl.noaa.gov/gmd/grad/solcalc/calcdetails.html.
 import {
-  getDayOfYear,
-  getHours,
-  getDaysInYear,
-  differenceInCalendarDays
+  differenceInCalendarDays,
+  startOfDay,
+  format,
+  addSeconds
 } from 'date-fns';
 
-const { PI, cos, sin, acos, tan } = Math;
+const { PI, cos, sin, asin, acos, tan, pow } = Math;
 
 // Julian days is number of days since Monday, January 1, 4713 BC.
 // Source: https://en.wikipedia.org/wiki/Julian_day.
@@ -21,65 +21,81 @@ const toRadian = (degree: number) => (degree * PI) / 180;
 const toDegree = (radian: number) => (radian * 180) / PI;
 
 export function calculate(date: Date, latitude: number, longitude: number) {
-  const julianDate =
+  const jd =
     differenceInCalendarDays(new Date(), new Date(2000, 0, 1, 12)) +
     JULIAN_DAYS_ON_20000501_1200 +
     LEAP_SECOND_AND_TERRESTIAL_TIME;
-  const julianCentury =
-    (julianDate - JULIAN_DAYS_ON_20000501_1200) / ONE_JULIAN_CENTURY;
+  const jc = (jd - JULIAN_DAYS_ON_20000501_1200) / ONE_JULIAN_CENTURY;
 
   // Mean longitude of the sun in degrees.
-  const geomMeanLongSun =
-    (280.46646 + (julianCentury * 36000.76983 + julianCentury * 0.0003032)) %
-    360;
+  const gmLongSun = (280.46646 + (jc * 36000.76983 + jc * 0.0003032)) % 360;
   // Mean anomaly of the sun in degrees.
-  const geomMeanAnomSun =
-    357.52911 + (julianCentury * 35999.05029 - 0.0001537 * julianCentury);
+  const gmAnomSun = 357.52911 + (jc * 35999.05029 - 0.0001537 * jc);
+  const eccentOrbitEarth = 0.016708634 - jc * (0.000042037 + 0.0000001267 * jc);
 
-  console.table([julianDate, julianCentury, geomMeanLongSun, geomMeanAnomSun]);
+  // Mean obliq ecliptic.
+  const meanObliqEcliptic =
+    23 +
+    (26 + (21.448 - jc * (46.815 + jc * (0.00059 - jc * 0.001813))) / 60) / 60;
+  const obliqCorr =
+    meanObliqEcliptic + 0.00256 * cos(toRadian(125.04 - 1934.136 * jc));
+  const vary = pow(tan(toRadian(obliqCorr / 2)), 2);
 
-  // const daysInYear = getDaysInYear(date);
-  // const dayOfYear = getDayOfYear(date);
-  // const hour = getHours(date);
+  // Sun calculations.
+  const sunEqCtr =
+    sin(toRadian(gmAnomSun)) * (1.914602 - jc * (0.004817 + 0.000014 * jc)) +
+    sin(toRadian(2 * gmAnomSun)) * (0.019993 - 0.000101 * jc) +
+    sin(toRadian(3 * gmAnomSun)) * 0.000289;
+  const sunTrueLongitude = gmLongSun + sunEqCtr;
+  // Sun apprearance longitude (degrees).
+  const sunAppearLong =
+    sunTrueLongitude -
+    0.00569 -
+    0.00478 * sin(toRadian(125.04 - 1934.136 * jc));
+  // Sun declination.
+  const sunDecl = toDegree(
+    asin(sin(toRadian(obliqCorr)) * sin(toRadian(sunAppearLong)))
+  );
 
-  // // Calculate γ, fractional year (in radian).
-  // const fractionalYear =
-  //   ((2 * PI) / daysInYear) * (dayOfYear - 1 + (hour - 12) / 24);
+  // Equation of time.
+  const eq =
+    4 *
+    toDegree(
+      vary * sin(2 * toRadian(gmLongSun)) -
+        2 * eccentOrbitEarth * sin(toRadian(gmAnomSun)) +
+        4 *
+          eccentOrbitEarth *
+          vary *
+          sin(toRadian(gmAnomSun)) *
+          cos(2 * toRadian(gmLongSun)) -
+        0.5 * vary * vary * sin(4 * toRadian(gmLongSun)) -
+        1.25 *
+          eccentOrbitEarth *
+          eccentOrbitEarth *
+          sin(2 * toRadian(gmAnomSun))
+    );
+  const haSunrise = toDegree(
+    acos(
+      cos(toRadian(90.833)) /
+        (cos(toRadian(latitude)) * cos(toRadian(sunDecl))) -
+        tan(toRadian(latitude)) * tan(toRadian(sunDecl))
+    )
+  );
 
-  // // Calculate equation of time (in minutes).
-  // const eqTime =
-  //   229.18 *
-  //   (0.000075 +
-  //     0.001868 * cos(fractionalYear) -
-  //     0.032077 * sin(fractionalYear) -
-  //     0.014615 * cos(2 * fractionalYear) -
-  //     0.040849 * sin(2 * fractionalYear));
+  // Now we just need to find the highest time of sun.
+  const solarNoon =
+    (720 - 4 * longitude - eq + date.getTimezoneOffset() * -1) / 1440;
 
-  // // Calculate the solar declination angle (in radians).
-  // const declRadian =
-  //   0.006918 -
-  //   0.399912 * cos(fractionalYear) +
-  //   0.070257 * sin(fractionalYear) -
-  //   0.006758 * cos(2 * fractionalYear) +
-  //   0.000907 * sin(2 * fractionalYear) -
-  //   0.002697 * cos(3 * fractionalYear) +
-  //   0.00148 * sin(3 * fractionalYear);
+  // Make them all seconds within a day.
+  const solarNoonSeconds = solarNoon * 86400;
+  const sunriseSeconds = solarNoonSeconds - ((haSunrise * 4) / 1440) * 86400;
+  const sunsetSeconds = solarNoonSeconds + ((haSunrise * 4) / 1440) * 86400;
 
-  // // Positive means sunrise, negative means sunset.
-  // const latitudeRadian = toRadian(latitude);
-  // const hourAngle = acos(
-  //   cos(toRadian(90.833)) / (cos(latitudeRadian) * cos(declRadian)) -
-  //     tan(latitudeRadian) * tan(declRadian)
-  // );
+  const start = startOfDay(date);
 
-  // const sunriseOrSet = 720 - 4 * (longitude + hourAngle) - eqTime;
-
-  // Solar noon is the time where the sun reaches the highest position.
-  // const solarNoon = 720 - (4 * longitude - eqTime);
-
-  // return sunriseOrSet;
+  return {
+    sunrise: format(addSeconds(start, sunriseSeconds), 'HH:mm:ss'),
+    lst: format(addSeconds(start, solarNoon * 86400), 'HH:mm:ss'),
+    sunset: format(addSeconds(start, sunsetSeconds), 'HH:mm:ss')
+  };
 }
-
-// (() => {
-//   console.log(calculate(new Date(), -6.2, 106.816666));
-// })();

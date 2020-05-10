@@ -9,8 +9,7 @@
   "scripts": {
     "build": "rollup -c",
     "test": "BABEL_ENV=test jest --watchAll",
-    "test:ci": "BABEL_ENV=test jest",
-    "postinstall": "yarn build"
+    "test:ci": "BABEL_ENV=test jest"
   },
   "devDependencies": {
     "@babel/core": "^7.9.0",

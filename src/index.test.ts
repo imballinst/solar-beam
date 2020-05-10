@@ -3,12 +3,12 @@ import {
   getSunriseInFractions,
   getSunsetInFractions,
   getJulianDate,
-  getSolarNoonLSTDate,
   getSolarNoonLSTInSeconds,
-  getSunriseDate,
   getSunriseInSeconds,
-  getSunsetDate,
-  getSunsetInSeconds
+  getSunsetInSeconds,
+  getSolarNoonLSTDate,
+  getSunriseDate,
+  getSunsetDate
 } from '.';
 // Use date-fns helper functions.
 import format from 'date-fns/format';

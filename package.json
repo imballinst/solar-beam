@@ -1,0 +1,35 @@
+{
+  "name": "solar-beam",
+  "version": "0.0.1",
+  "description": "General solar position calculator powered with TypeScript",
+  "main": "lib/index.js",
+  "repository": "git@github.com:Imballinst/solar-beam.git",
+  "author": "Try Ajitiono <ballinst@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc && rollup -c",
+    "build:typescript": "tsc",
+    "test": "jest --watch"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.9.0",
+    "@babel/preset-env": "^7.9.5",
+    "@babel/preset-typescript": "^7.9.0",
+    "@rollup/plugin-babel": "^5.0.0",
+    "@rollup/plugin-node-resolve": "^7.1.3",
+    "@rollup/plugin-typescript": "^4.1.1",
+    "@types/jest": "^25.2.1",
+    "@types/node": "^13.13.4",
+    "babel-jest": "^25.5.1",
+    "date-fns": "^2.12.0",
+    "jest": "^25.5.1",
+    "rollup": "^2.8.2",
+    "rollup-plugin-terser": "^5.3.0",
+    "tslib": "^1.11.2",
+    "typescript": "^3.8.3"
+  },
+  "peerDependencies": {
+    "date-fns": "^2.12.0"
+  },
+  "type": "module"
+}

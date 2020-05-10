@@ -9,7 +9,7 @@
   "scripts": {
     "build": "BABEL_ENV=dev tsc && rollup -c",
     "build:typescript": "BABEL_ENV=dev tsc",
-    "test": "BABEL_ENV=test jest --watch",
+    "test": "BABEL_ENV=test jest --watchAll",
     "test:ci": "BABEL_ENV=test jest"
   },
   "devDependencies": {

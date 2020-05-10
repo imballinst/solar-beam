@@ -28,11 +28,17 @@ General solar position calculator powered with TypeScript. The calculation is ba
 
 ### Date
 
-| Function name         | Parameter                                | Description                                          |
-| --------------------- | ---------------------------------------- | ---------------------------------------------------- |
-| `getSolarNoonLSTDate` | `(params: MainFunctionParams) => string` | Returns the solar noon time in the `HH:mm:ss` format |
-| `getSunriseDate`      | `(params: MainFunctionParams) => string` | Returns the sunrise time in the `HH:mm:ss` format    |
-| `getSunsetDate`       | `(params: MainFunctionParams) => string` | Returns the sunset time in the `HH:mm:ss` format     |
+| Function name         | Parameter                                | Description                                                                       |
+| --------------------- | ---------------------------------------- | --------------------------------------------------------------------------------- |
+| `getSolarNoonLSTDate` | `(params: MainFunctionParams) => string` | Returns the solar noon time in `HH:mm:ss` format from the given date and location |
+| `getSunriseDate`      | `(params: MainFunctionParams) => string` | Returns the sunrise time in `HH:mm:ss` format from the given date and location    |
+| `getSunsetDate`       | `(params: MainFunctionParams) => string` | Returns the sunset time in `HH:mm:ss` format from the given date and location     |
+
+### Angles
+
+| Function name            | Parameter                                | Description                                                                   |
+| ------------------------ | ---------------------------------------- | ----------------------------------------------------------------------------- |
+| `getSolarElevationAngle` | `(params: MainFunctionParams) => number` | Returns the solar elevation angle in degrees from the given date and location |
 
 ## LICENSE
 

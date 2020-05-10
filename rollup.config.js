@@ -26,8 +26,7 @@ export default {
     }),
     typescript({
       lib: ['es5', 'es6', 'dom'],
-      target: 'es5',
-      tsconfig: 'tsconfig.build.json'
+      target: 'es5'
     })
   ]
 };

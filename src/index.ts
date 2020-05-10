@@ -2,13 +2,9 @@
 import {
   differenceInCalendarDays,
   startOfDay,
-  format,
   addSeconds,
-  subHours,
-  differenceInDays,
   getMinutes,
-  getHours,
-  addMinutes
+  getHours
 } from 'date-fns';
 
 const { PI, cos, sin, asin, acos, tan, pow, round } = Math;
@@ -25,6 +21,11 @@ const radians = (degree: number) => (degree * PI) / 180;
 const degrees = (radian: number) => (radian * 180) / PI;
 
 // Baseline numbers.
+
+/**
+ * Gets the decimal fraction of the day. For example, 6 o'clock will return 0.25.
+ * @param date The **local** date we are trying to calculate. It's not UTC or GMAT.
+ */
 function getDayFraction(date: Date) {
   return (getMinutes(date) / 60 + getHours(date)) / 24;
 }
@@ -33,24 +34,23 @@ function getDecimalNumbers(value: number, defaultNumberOfDecimals = 4) {
   return Number(value.toFixed(defaultNumberOfDecimals));
 }
 
-function getJulianDate(date: Date, tzOffset = date.getTimezoneOffset()) {
-  // Source: https://www.aavso.org/computing-jd.
-  const utc = addMinutes(date, tzOffset);
-  const gmat = subHours(utc, 12);
+// Allow "mocking" the tzOffset.
+export function getJulianDate(date: Date, tzOffset = date.getTimezoneOffset()) {
+  const decimal = getDayFraction(date);
+  const tzSubtractor = (-1 * tzOffset) / 1440;
 
-  const decimal = getDayFraction(gmat);
-
-  const jd =
+  return (
     differenceInCalendarDays(date, new Date(1900, 0, 1, 12)) +
     JULIAN_DAYS_ON_19000501_1200_APPROX +
-    // Include the end date.
-    1;
-
-  return jd + decimal;
+    // Include the end date and a bit of rounding.
+    2 +
+    decimal -
+    tzSubtractor
+  );
 }
 
-function getBaselineNumbers(date: Date) {
-  const jd = getJulianDate(date);
+function getBaselineNumbers(date: Date, tzOffset: number) {
+  const jd = getJulianDate(date, tzOffset);
   const jc = (jd - JULIAN_DAYS_ON_19000501_1200) / ONE_JULIAN_CENTURY;
 
   // Mean longitude of the sun in degrees.
@@ -103,12 +103,20 @@ function getBaselineNumbers(date: Date) {
 }
 
 // Baseline numbers for sunrise and sunset.
-function getBaselineNumbersForSunriseAndSunset(
-  date: Date,
-  latitude: number,
-  longitude: number
-) {
-  const { eq, sunDecl } = getBaselineNumbers(date);
+type MainFunctionParams = {
+  date: Date;
+  latitude: number;
+  longitude: number;
+  tzOffset?: number;
+};
+
+function getBaselineNumbersForSunriseAndSunset({
+  date,
+  latitude,
+  longitude,
+  tzOffset = date.getTimezoneOffset()
+}: MainFunctionParams) {
+  const { eq, sunDecl } = getBaselineNumbers(date, tzOffset);
   const haSunrise = degrees(
     acos(
       cos(radians(90.833)) / (cos(radians(latitude)) * cos(radians(sunDecl))) -
@@ -117,8 +125,7 @@ function getBaselineNumbersForSunriseAndSunset(
   );
 
   // Now we just need to find the highest time of sun.
-  const solarNoon =
-    (720 - 4 * longitude - eq + date.getTimezoneOffset() * -1) / 1440;
+  const solarNoon = (720 - 4 * longitude - eq + tzOffset * -1) / 1440;
 
   return {
     haSunrise,
@@ -127,44 +134,24 @@ function getBaselineNumbersForSunriseAndSunset(
 }
 
 // Functions that return in seconds.
-export function getSolarNoonLSTInSeconds(
-  date: Date,
-  latitude: number,
-  longitude: number
-) {
-  const { solarNoon } = getBaselineNumbersForSunriseAndSunset(
-    date,
-    latitude,
-    longitude
-  );
+export function getSolarNoonLSTInSeconds(params: MainFunctionParams) {
+  const { solarNoon } = getBaselineNumbersForSunriseAndSunset(params);
 
   return solarNoon * 86400;
 }
 
-export function getSunriseInSeconds(
-  date: Date,
-  latitude: number,
-  longitude: number
-) {
+export function getSunriseInSeconds(params: MainFunctionParams) {
   const { haSunrise, solarNoon } = getBaselineNumbersForSunriseAndSunset(
-    date,
-    latitude,
-    longitude
+    params
   );
   const solarNoonInSeconds = solarNoon * 86400;
 
   return solarNoonInSeconds - ((haSunrise * 4) / 1440) * 86400;
 }
 
-export function getSunsetInSeconds(
-  date: Date,
-  latitude: number,
-  longitude: number
-) {
+export function getSunsetInSeconds(params: MainFunctionParams) {
   const { haSunrise, solarNoon } = getBaselineNumbersForSunriseAndSunset(
-    date,
-    latitude,
-    longitude
+    params
   );
   const solarNoonInSeconds = solarNoon * 86400;
 
@@ -172,74 +159,50 @@ export function getSunsetInSeconds(
 }
 
 // Functions that return the fraction.
-export function getSolarNoonLSTInFractions(
-  date: Date,
-  latitude: number,
-  longitude: number
-) {
-  return getSolarNoonLSTInSeconds(date, latitude, longitude) / 86400;
+export function getSolarNoonLSTInFractions(params: MainFunctionParams) {
+  return getSolarNoonLSTInSeconds(params) / 86400;
 }
 
-export function getSunriseInFractions(
-  date: Date,
-  latitude: number,
-  longitude: number
-) {
-  return getSunriseInSeconds(date, latitude, longitude) / 86400;
+export function getSunriseInFractions(params: MainFunctionParams) {
+  return getSunriseInSeconds(params) / 86400;
 }
 
-export function getSunsetInFractions(
-  date: Date,
-  latitude: number,
-  longitude: number
-) {
-  return getSunsetInSeconds(date, latitude, longitude) / 86400;
+export function getSunsetInFractions(params: MainFunctionParams) {
+  return getSunsetInSeconds(params) / 86400;
 }
 
 // Functions to get the exact date.
-export function getSolarNoonLST(
-  date: Date,
-  latitude: number,
-  longitude: number
-) {
-  const { solarNoon } = getBaselineNumbersForSunriseAndSunset(
-    date,
-    latitude,
-    longitude
-  );
+export function getSolarNoonLSTDate(params: MainFunctionParams) {
+  const { solarNoon } = getBaselineNumbersForSunriseAndSunset(params);
 
   const solarNoonInSeconds = solarNoon * 86400;
-  const start = startOfDay(date);
+  const start = startOfDay(params.date);
 
-  return addSeconds(start, solarNoonInSeconds);
+  return addSeconds(start, getDecimalNumbers(solarNoonInSeconds, 0));
 }
 
-export function getSunrise(date: Date, latitude: number, longitude: number) {
+export function getSunriseDate(params: MainFunctionParams) {
   const { haSunrise, solarNoon } = getBaselineNumbersForSunriseAndSunset(
-    date,
-    latitude,
-    longitude
+    params
   );
 
   const solarNoonInSeconds = solarNoon * 86400;
   const sunriseSeconds = solarNoonInSeconds - ((haSunrise * 4) / 1440) * 86400;
-  const start = startOfDay(date);
+  const start = startOfDay(params.date);
 
-  return addSeconds(start, sunriseSeconds);
+  return addSeconds(start, getDecimalNumbers(sunriseSeconds, 0));
 }
 
-export function getSunset(date: Date, latitude: number, longitude: number) {
+export function getSunsetDate(params: MainFunctionParams) {
   const { haSunrise, solarNoon } = getBaselineNumbersForSunriseAndSunset(
-    date,
-    latitude,
-    longitude
+    params
   );
 
   const solarNoonInSeconds = solarNoon * 86400;
   const sunriseSeconds = solarNoonInSeconds + ((haSunrise * 4) / 1440) * 86400;
-  const start = startOfDay(date);
+  const start = startOfDay(params.date);
 
-  return addSeconds(start, sunriseSeconds);
+  return addSeconds(start, getDecimalNumbers(sunriseSeconds, 0));
 }
 
 // TODO: get solar elevation.

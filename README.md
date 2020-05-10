@@ -26,6 +26,8 @@ const date = new Date(2020, 4, 9);
 getJulianDate(date, -420); // 2458978.2083333335.
 ```
 
+For more detailed information, please see the [test file](src/index.test.ts).
+
 ## Available functions
 
 ### Common utils

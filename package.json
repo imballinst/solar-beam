@@ -7,9 +7,10 @@
   "author": "Try Ajitiono <ballinst@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "build": "tsc && rollup -c",
-    "build:typescript": "tsc",
-    "test": "jest --watch"
+    "build": "BABEL_ENV=dev tsc && rollup -c",
+    "build:typescript": "BABEL_ENV=dev tsc",
+    "test": "BABEL_ENV=test jest --watch",
+    "test:ci": "BABEL_ENV=test jest"
   },
   "devDependencies": {
     "@babel/core": "^7.9.0",

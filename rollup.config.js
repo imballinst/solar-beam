@@ -10,7 +10,7 @@ export default {
     {
       name: 'solarBeam',
       file: 'dist/index.js',
-      format: 'umd'
+      format: 'cjs'
     },
     {
       name: 'solarBeam',

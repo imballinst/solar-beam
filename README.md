@@ -85,7 +85,7 @@ yarn test
 
 ## Next updates
 
-- [ ] Breakdown functions to separate folders and remove `lib/`. So, `dist/` will contain `index.js`, `index.min.js`, and all other functions from `src/`. Hence, when browsers include it from `<script>` tag, they can access `index.min.js` directly, while users who want to use ESM can do, e.g. `import getJulianDate from 'solar-beam/getJulianDate';`.
+- [ ] Breakdown functions to separate folders. So, `dist/` will contain `index.js`, `index.min.js`, and all other functions from `src/`. Hence, when browsers include it from `<script>` tag, they can access `index.min.js` directly, while users who want to use ESM can do, e.g. `import getJulianDate from 'solar-beam/getJulianDate';`.
 
 ## LICENSE
 

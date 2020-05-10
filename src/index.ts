@@ -1,11 +1,9 @@
 // Source: https://www.esrl.noaa.gov/gmd/grad/solcalc/calcdetails.html.
-import {
-  differenceInCalendarDays,
-  startOfDay,
-  addSeconds,
-  getMinutes,
-  getHours
-} from 'date-fns';
+import differenceInCalendarDays from 'date-fns/differenceInCalendarDays';
+import startOfDay from 'date-fns/startOfDay';
+import addSeconds from 'date-fns/addSeconds';
+import getMinutes from 'date-fns/getMinutes';
+import getHours from 'date-fns/getHours';
 
 const { PI, cos, sin, asin, acos, tan, pow, round } = Math;
 

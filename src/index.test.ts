@@ -12,8 +12,6 @@ import {
 } from '.';
 // Use date-fns helper functions.
 import format from 'date-fns/format';
-import startOfDay from 'date-fns/startOfDay';
-import addSeconds from 'date-fns/addSeconds';
 
 type Result = {
   julianDate: number;

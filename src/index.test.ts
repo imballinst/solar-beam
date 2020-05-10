@@ -83,6 +83,7 @@ for (const key of keys) {
 
   describe(title, () => {
     it('Julian date', () => {
+      console.log(title, getJulianDate(date, tzOffset));
       expect(getJulianDate(date, tzOffset)).toBeCloseTo(result.julianDate, 1);
     });
 

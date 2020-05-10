@@ -2,6 +2,30 @@
 
 General solar position calculator powered with TypeScript. The calculation is based on the spreadsheet from [Earth System Research Laboratory](https://www.esrl.noaa.gov/gmd/grad/solcalc/calcdetails.html).
 
+DISCLAIMER: Please be mindful when using this library, as there is no guarantee that the values are valid. As written on the section "Data for Litigation":
+
+> The NOAA Solar Calculator is for research and recreational use only. NOAA cannot certify or authenticate sunrise, sunset or solar position data. The U.S. Government does not collect observations of astronomical data, and due to atmospheric conditions our calculated results may vary significantly from actual observed values.
+
+## Installation
+
+```bash
+# npm
+npm install --save solar-beam
+
+# yarn
+yarn add solar-beam
+```
+
+## Usage
+
+```ts
+import { getJulianDate } from 'solar-beam';
+
+// May 5th, 2020, 12am o'clock, GMT +7.
+const date = new Date(2020, 4, 9);
+getJulianDate(date, -420); // 2458978.2083333335.
+```
+
 ## Available functions
 
 ### Common utils

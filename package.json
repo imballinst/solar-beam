@@ -1,6 +1,6 @@
 {
   "name": "solar-beam",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "General solar position calculator powered with TypeScript",
   "main": "dist/index.js",
   "repository": "git@github.com:Imballinst/solar-beam.git",

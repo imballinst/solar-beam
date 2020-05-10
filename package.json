@@ -7,13 +7,16 @@
   "author": "Try Ajitiono <ballinst@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "build": "tsc",
+    "build": "rollup -c",
+    "build:typescript": "tsc",
     "test": "jest --watch"
   },
   "devDependencies": {
     "@babel/core": "^7.9.0",
     "@babel/preset-env": "^7.9.5",
     "@babel/preset-typescript": "^7.9.0",
+    "@rollup/plugin-babel": "^5.0.0",
+    "@rollup/plugin-node-resolve": "^7.1.3",
     "@types/jest": "^25.2.1",
     "@types/node": "^13.13.4",
     "babel-jest": "^25.5.1",

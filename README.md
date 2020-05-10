@@ -1,5 +1,7 @@
 # solar-beam
 
+![CI](https://github.com/Imballinst/solar-beam/workflows/CI/badge.svg?branch=master)
+
 General solar position calculator powered with TypeScript. The calculation is based on the spreadsheet from [Earth System Research Laboratory](https://www.esrl.noaa.gov/gmd/grad/solcalc/calcdetails.html).
 
 DISCLAIMER: Please be mindful when using this library, as there is no guarantee that the values are valid. As written on the section "Data for Litigation":

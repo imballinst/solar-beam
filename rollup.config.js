@@ -10,7 +10,7 @@ export default {
     {
       name: 'solarBeam',
       file: 'dist/index.js',
-      format: 'umd'
+      format: 'cjs'
     },
     {
       name: 'solarBeam',
@@ -26,8 +26,7 @@ export default {
     }),
     typescript({
       lib: ['es5', 'es6', 'dom'],
-      target: 'es5',
-      tsconfig: 'tsconfig.build.json'
+      target: 'es5'
     })
   ]
 };

@@ -1,16 +1,16 @@
 {
   "name": "solar-beam",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "General solar position calculator powered with TypeScript",
-  "main": "lib/index.js",
+  "main": "dist/index.js",
   "repository": "git@github.com:Imballinst/solar-beam.git",
   "author": "Try Ajitiono <ballinst@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "build": "BABEL_ENV=dev tsc && rollup -c",
-    "build:typescript": "BABEL_ENV=dev tsc",
+    "build": "rollup -c",
     "test": "BABEL_ENV=test jest --watchAll",
-    "test:ci": "BABEL_ENV=test jest"
+    "test:ci": "BABEL_ENV=test jest",
+    "postinstall": "yarn build"
   },
   "devDependencies": {
     "@babel/core": "^7.9.0",

@@ -68,6 +68,25 @@ For more detailed information, please see the [test file](src/index.test.ts).
 | ------------------------ | ---------------------------------------- | ----------------------------------------------------------------------------- |
 | `getSolarElevationAngle` | `(params: MainFunctionParams) => number` | Returns the solar elevation angle in degrees from the given date and location |
 
+## Trying it locally
+
+```bash
+# Build first to generate the dist/ folder.
+yarn build
+# Run the example file.
+node example/index.js
+```
+
+## Testing
+
+```bash
+yarn test
+```
+
+## Next updates
+
+- [ ] Breakdown functions to separate folders. So, `dist/` will contain `index.js`, `index.min.js`, and all other functions from `src/`. Hence, when browsers include it from `<script>` tag, they can access `index.min.js` directly, while users who want to use ESM can do, e.g. `import getJulianDate from 'solar-beam/getJulianDate';`.
+
 ## LICENSE
 
 MIT

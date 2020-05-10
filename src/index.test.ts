@@ -1,14 +1,15 @@
 import {
+  getJulianDate,
   getSolarNoonLSTInFractions,
   getSunriseInFractions,
   getSunsetInFractions,
-  getJulianDate,
   getSolarNoonLSTInSeconds,
   getSunriseInSeconds,
   getSunsetInSeconds,
   getSolarNoonLSTDate,
   getSunriseDate,
-  getSunsetDate
+  getSunsetDate,
+  getSolarElevationAngle
 } from '.';
 // Use date-fns helper functions.
 import format from 'date-fns/format';
@@ -24,6 +25,7 @@ type Result = {
   sunriseSeconds: number;
   sunsetSeconds: number;
   solarNoonSeconds: number;
+  solarElevationAngleWithApprox: number;
 };
 // A tuple of [title, date, tzOffset, latitude, longitude, and result].
 type TestCaseItem = [string, Date, number, number, number, Result];
@@ -47,7 +49,8 @@ const testCases: {
       sunsetSeconds: 0.7395379788 * 86400,
       sunriseTime: '05:53:28',
       solarNoonTime: '11:49:12',
-      sunsetTime: '17:44:56'
+      sunsetTime: '17:44:56',
+      solarElevationAngleWithApprox: -78.54584746
     }
   ],
   melbourne: [
@@ -57,7 +60,6 @@ const testCases: {
     -37.8136,
     144.9631,
     {
-      // 0.5574355193	0.2502435199	0.8646275187
       julianDate: 2459578.8875,
       sunrise: 0.2502435199,
       solarNoon: 0.5574355193,
@@ -67,7 +69,8 @@ const testCases: {
       sunsetSeconds: 0.8646275187 * 86400,
       sunriseTime: '06:00:21',
       solarNoonTime: '13:22:42',
-      sunsetTime: '20:45:04'
+      sunsetTime: '20:45:04',
+      solarElevationAngleWithApprox: 4.056073631
     }
   ]
 };
@@ -132,6 +135,13 @@ for (const key of keys) {
       const formatted = format(getSunsetDate(params), 'HH:mm:ss');
 
       expect(formatted).toBe(result.sunsetTime);
+    });
+
+    it('getSolarElevationAngle', () => {
+      expect(getSolarElevationAngle(params)).toBeCloseTo(
+        result.solarElevationAngleWithApprox,
+        1
+      );
     });
   });
 }

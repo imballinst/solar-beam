@@ -5,7 +5,7 @@ import addSeconds from 'date-fns/addSeconds';
 import getMinutes from 'date-fns/getMinutes';
 import getHours from 'date-fns/getHours';
 
-const { PI, cos, sin, asin, acos, tan, pow, round } = Math;
+const { PI, cos, sin, asin, acos, tan, pow } = Math;
 
 // Julian days is number of days since Monday, January 1, 4713 BC.
 const JULIAN_DAYS_ON_19000501_1200_APPROX = 2415018.5;
@@ -203,4 +203,56 @@ export function getSunsetDate(params: MainFunctionParams) {
   return addSeconds(start, getDecimalNumbers(sunriseSeconds, 0));
 }
 
-// TODO: get solar elevation.
+export function getSolarElevationAngle({
+  date,
+  latitude,
+  longitude,
+  tzOffset = date.getTimezoneOffset()
+}: MainFunctionParams) {
+  const { eq, sunDecl } = getBaselineNumbers(date, tzOffset);
+
+  const trueSolarTime =
+    (getDayFraction(date) * 1440 +
+      eq +
+      4 * longitude -
+      60 * ((-1 * tzOffset) / 60)) %
+    1440;
+
+  const angleAddition = trueSolarTime / 4 < 0 ? 180 : -180;
+  const hourAngle = trueSolarTime / 4 + angleAddition;
+
+  const solarZenithAngle = degrees(
+    acos(
+      sin(radians(latitude)) * sin(radians(sunDecl)) +
+        cos(radians(latitude)) * cos(radians(sunDecl)) * cos(radians(hourAngle))
+    )
+  );
+  const solarElevationAngle = 90 - solarZenithAngle;
+
+  let atmosphericRefractionApproximate;
+
+  if (solarElevationAngle > 85) {
+    atmosphericRefractionApproximate = 0;
+  } else if (solarElevationAngle > 5) {
+    atmosphericRefractionApproximate =
+      58.1 / tan(radians(solarElevationAngle)) -
+      0.07 / pow(tan(radians(solarElevationAngle)), 3) +
+      0.000086 / pow(tan(radians(solarElevationAngle)), 5);
+  } else if (solarElevationAngle > -0.575) {
+    atmosphericRefractionApproximate =
+      1735 +
+      solarElevationAngle *
+        (-518.2 +
+          solarElevationAngle *
+            (103.4 +
+              solarElevationAngle * (-12.79 + solarElevationAngle * 0.711)));
+  } else {
+    atmosphericRefractionApproximate =
+      -20.772 / tan(radians(solarElevationAngle));
+  }
+
+  // Divide by 3600.
+  atmosphericRefractionApproximate /= 3600;
+
+  return solarElevationAngle + atmosphericRefractionApproximate;
+}
